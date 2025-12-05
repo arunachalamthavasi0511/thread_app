@@ -1,0 +1,47 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Columns - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3>Columns</h3>
+        <p class="text-muted mb-0">
+            Each column has a QR code pointing to its detail page. Print and stick the QR on the physical column.
+        </p>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+        Print Sheet
+    </button>
+</div>
+
+<div class="row">
+    {% for col in columns %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card card-soft text-center p-2">
+                <div class="card-body">
+                    <h5 class="card-title mb-1">Column: {{ col.name }}</h5>
+                    <p class="text-muted mb-2" style="font-size:0.9rem;">
+                        Total Qty: <strong>{{ col.total_qty }}</strong>
+                    </p>
+                    <!-- QR via Google Chart API -->
+                    <img
+                        src="https://chart.googleapis.com/chart?chs=160x160&cht=qr&chl={{ col.url|urlencode }}"
+                        alt="QR for {{ col.name }}"
+                        class="img-fluid mb-2"
+                    >
+                    <div>
+                        <a href="{{ col.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            Open Column Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <p class="text-muted">No columns found.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

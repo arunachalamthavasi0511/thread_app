@@ -1,0 +1,124 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Issuance Logs - Thread Inventory{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">Issuance Logs</h3>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-sm-6 col-md-4">
+        <input type="text" name="q" value="{{ q }}" class="form-control"
+               placeholder="Search by shade, tkt, user, status">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'issuance_logs' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'issuance_logs_export' %}?q={{ q }}" class="btn btn-success btn-sm">
+            Export CSV
+        </a>
+    </div>
+</form>
+
+<div class="card card-soft">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle resizable-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Thread</th>
+                        <th>Shade</th>
+                        <th>Tkt</th>
+                        <th>Qty</th>
+                        <th>Status</th>
+                        <th>Requested By</th>
+                        <th>Requested At</th>
+                        <th>Approved By</th>
+                        <th>Approved At</th>
+                        <th>Bin</th>
+                        <th>Column</th>
+                        <th>Receipt No</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in issuances %}
+                        <tr>
+                            <td>{{ i.id }}</td>
+                            <td>{{ i.thread }}</td>
+                            <td>{{ i.thread.shade }}</td>
+                            <td>{{ i.thread.tkt }}</td>
+                            <td>{{ i.requested_quantity }}</td>
+                            <td>{{ i.status }}</td>
+                            <td>{{ i.requested_by.username|default:"-" }}</td>
+                            <td>{{ i.requested_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ i.approved_by.username|default:"-" }}</td>
+                            <td>
+                                {% if i.approved_at %}
+                                    {{ i.approved_at|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ i.bin_snapshot }}</td>
+                            <td>{{ i.column_snapshot }}</td>
+                            <td>{{ i.receipt_number }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="13" class="text-center text-muted">
+                                No issuance logs found.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const tables = document.querySelectorAll("table.resizable-table");
+    tables.forEach(function(table) {
+        const ths = table.querySelectorAll("thead th");
+        ths.forEach(function(th) {
+            const resizer = document.createElement("div");
+            resizer.style.width = "5px";
+            resizer.style.height = "100%";
+            resizer.style.position = "absolute";
+            resizer.style.top = "0";
+            resizer.style.right = "0";
+            resizer.style.cursor = "col-resize";
+            resizer.style.userSelect = "none";
+            th.style.position = "relative";
+            th.appendChild(resizer);
+
+            let startX, startWidth;
+
+            resizer.addEventListener("mousedown", function(e) {
+                startX = e.pageX;
+                startWidth = th.offsetWidth;
+                document.addEventListener("mousemove", onMouseMove);
+                document.addEventListener("mouseup", onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                const diffX = e.pageX - startX;
+                th.style.width = (startWidth + diffX) + "px";
+            }
+
+            function onMouseUp() {
+                document.removeEventListener("mousemove", onMouseMove);
+                document.removeEventListener("mouseup", onMouseUp);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

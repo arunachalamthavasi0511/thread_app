@@ -1,0 +1,78 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}User Management - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Create user form -->
+    <div class="col-lg-5 mb-4">
+        <div class="card card-soft">
+            <div class="card-body">
+                <h4 class="mb-3">Create New User</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        {{ form.password }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        {{ form.role }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        Create User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing users table -->
+    <div class="col-lg-7 mb-4">
+        <div class="card card-soft">
+            <div class="card-body">
+                <h4 class="mb-3">Existing Users</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Is Superuser</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                                <tr>
+                                    <td>{{ u.username }}</td>
+                                    <td>
+                                        {% if u.is_superuser %}
+                                            ✅
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ u.role_display }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">
+                                        No users found.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted" style="font-size:0.85rem;">
+                    Note: The Django superuser (admin) is treated as ADMIN even if the role is not shown here.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

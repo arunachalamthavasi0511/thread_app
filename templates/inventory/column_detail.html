@@ -1,0 +1,54 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Column {{ column_name }} - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3>Column: {{ column_name }}</h3>
+        <p class="text-muted mb-0">
+            Total available quantity in this column: <strong>{{ total_qty }}</strong>
+        </p>
+    </div>
+    <a href="{% url 'issuance' %}?column={{ column_name|urlencode }}" class="btn btn-primary">
+        Go to Issuance for this Column
+    </a>
+</div>
+
+<div class="card card-soft">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Shade</th>
+                        <th>Tkt</th>
+                        <th>Bin No</th>
+                        <th>Category</th>
+                        <th>Brand</th>
+                        <th>Available Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in threads %}
+                        <tr>
+                            <td>{{ t.shade }}</td>
+                            <td>{{ t.tkt }}</td>
+                            <td>{{ t.bin_no }}</td>
+                            <td>{{ t.get_category_display }}</td>
+                            <td>{{ t.brand }}</td>
+                            <td>{{ t.available_quantity }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No threads present in this column.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

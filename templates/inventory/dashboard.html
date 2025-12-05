@@ -1,0 +1,76 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Dashboard - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h3>Dashboard</h3>
+        <p class="text-muted">Threads with lowest stock appear on top.</p>
+    </div>
+</div>
+{% if can_approve %}
+    {% if pending_count > 0 %}
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <div>
+                There are <strong>{{ pending_count }}</strong> pending issuance request(s).
+            </div>
+            <a href="{% url 'pending_issuances' %}" class="btn btn-sm btn-outline-dark">
+                Review Approvals
+            </a>
+        </div>
+    {% else %}
+        <div class="alert alert-success">
+            No pending issuance requests.
+        </div>
+    {% endif %}
+{% endif %}
+<div class="card card-soft">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Shade</th>
+                        <th>Tkt</th>
+                        <th>Bin No</th>
+                        <th>Column</th>
+                        <th>Category</th>
+                        <th>Brand</th>
+                        <th>Available Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in threads %}
+                        <tr>
+                            <td>{{ t.shade }}</td>
+                            <td>{{ t.tkt }}</td>
+                            <td>{{ t.bin_no }}</td>
+                            <td>{{ t.column_name }}</td>
+                            <td>{{ t.get_category_display }}</td>
+                            <td>{{ t.brand }}</td>
+                            <td>
+                                {% if t.available_quantity <= 5 %}
+                                    <span class="badge badge-low text-white">
+                                        {{ t.available_quantity }} (Low)
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-ok text-white">
+                                        {{ t.available_quantity }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">
+                                No thread records yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

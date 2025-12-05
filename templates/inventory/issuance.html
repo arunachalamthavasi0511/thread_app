@@ -1,0 +1,42 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Issuance - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card card-soft mb-4">
+            <div class="card-body">
+                <h4 class="mb-3">Request / Issue Thread</h4>
+                <p class="text-muted" style="font-size:0.9rem;">
+                    Users can create a request. Power Users / Admin auto-approve their own issuance.
+                </p>
+
+                {% if column %}
+                    <div class="alert alert-info py-2">
+                        Showing threads for column: <strong>{{ column }}</strong>
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% if column %}
+                        <input type="hidden" name="column" value="{{ column }}">
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label">Thread</label>
+                        {{ form.thread }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Requested Quantity</label>
+                        {{ form.requested_quantity }}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        Submit Issuance
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

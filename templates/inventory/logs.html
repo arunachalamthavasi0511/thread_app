@@ -1,0 +1,91 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Logs - Thread Inventory{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">Logs</h3>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card card-soft">
+            <div class="card-body">
+                <h5>Thread Registrations</h5>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Shade</th>
+                                <th>Tkt</th>
+                                <th>Bin</th>
+                                <th>Column</th>
+                                <th>Qty</th>
+                                <th>Registered At</th>
+                                <th>By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in threads %}
+                                <tr>
+                                    <td>{{ t.shade }}</td>
+                                    <td>{{ t.tkt }}</td>
+                                    <td>{{ t.bin_no }}</td>
+                                    <td>{{ t.column_name }}</td>
+                                    <td>{{ t.available_quantity }}</td>
+                                    <td>{{ t.registration_date|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ t.created_by.username|default:"-" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="7" class="text-center text-muted">No thread data.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card card-soft">
+            <div class="card-body">
+                <h5>Issuance Logs</h5>
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Thread</th>
+                                <th>Qty</th>
+                                <th>Status</th>
+                                <th>Requested By</th>
+                                <th>Requested At</th>
+                                <th>Approved By</th>
+                                <th>Approved At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in issuances %}
+                                <tr>
+                                    <td>{{ i.thread }}</td>
+                                    <td>{{ i.requested_quantity }}</td>
+                                    <td>{{ i.status }}</td>
+                                    <td>{{ i.requested_by.username|default:"-" }}</td>
+                                    <td>{{ i.requested_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ i.approved_by.username|default:"-" }}</td>
+                                    <td>
+                                        {% if i.approved_at %}
+                                            {{ i.approved_at|date:"Y-m-d H:i" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="7" class="text-center text-muted">No issuance logs.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

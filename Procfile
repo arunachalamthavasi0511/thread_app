@@ -1,0 +1,1 @@
+web: gunicorn thread_app.wsgi

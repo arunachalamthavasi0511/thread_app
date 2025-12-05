@@ -1,0 +1,57 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Receipt {{ i.receipt_number }} - Thread Inventory{% endblock %}
+
+{% block extra_head %}
+<style>
+    .receipt-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-card card card-soft">
+    <div class="card-body">
+        <h4 class="text-center mb-3">Thread Issuance Receipt</h4>
+        <p class="text-center text-muted mb-4">
+            Receipt No: <strong>{{ i.receipt_number }}</strong>
+        </p>
+
+        <div class="row mb-2">
+            <div class="col-6"><strong>Shade:</strong> {{ i.thread.shade }}</div>
+            <div class="col-6"><strong>Tkt:</strong> {{ i.thread.tkt }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Category:</strong> {{ i.thread.get_category_display }}</div>
+            <div class="col-6"><strong>Brand:</strong> {{ i.thread.brand }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Column:</strong> {{ i.column_snapshot }}</div>
+            <div class="col-6"><strong>Bin No:</strong> {{ i.bin_snapshot }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Quantity:</strong> {{ i.requested_quantity }}</div>
+            <div class="col-6"><strong>Status:</strong> {{ i.status }}</div>
+        </div>
+        <hr>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Requested By:</strong> {{ i.requested_by.username|default:"-" }}</div>
+            <div class="col-6"><strong>Requested At:</strong> {{ i.requested_at|date:"Y-m-d H:i" }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Approved By:</strong> {{ i.approved_by.username|default:"-" }}</div>
+            <div class="col-6">
+                <strong>Approved At:</strong>
+                {% if i.approved_at %}{{ i.approved_at|date:"Y-m-d H:i" }}{% else %}-{% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex justify-content-between">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+            <button class="btn btn-primary btn-sm" onclick="window.print()">Print</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

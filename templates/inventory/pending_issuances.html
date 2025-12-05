@@ -1,0 +1,52 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Pending Approvals - Thread Inventory{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">Pending Issuance Approvals</h3>
+
+<div class="card card-soft">
+    <div class="card-body">
+        {% if pending %}
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Thread</th>
+                            <th>Qty</th>
+                            <th>Requested By</th>
+                            <th>Requested At</th>
+                            <th>Bin</th>
+                            <th>Column</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in pending %}
+                            <tr>
+                                <td>#{{ i.id }}</td>
+                                <td>{{ i.thread.shade }} / {{ i.thread.tkt }}</td>
+                                <td>{{ i.requested_quantity }}</td>
+                                <td>{{ i.requested_by.username|default:"-" }}</td>
+                                <td>{{ i.requested_at|date:"Y-m-d H:i" }}</td>
+                                <td>{{ i.bin_snapshot }}</td>
+                                <td>{{ i.column_snapshot }}</td>
+                                <td>
+                                    <a href="{% url 'approve' i.id %}" class="btn btn-sm btn-success">
+                                        Approve
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">
+                There are no pending issuance requests.
+            </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

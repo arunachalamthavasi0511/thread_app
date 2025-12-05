@@ -1,0 +1,57 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Register Thread - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9">
+        <div class="card card-soft">
+            <div class="card-body">
+                <h4 class="mb-3">Register New Thread</h4>
+                <p class="text-muted" style="font-size:0.9rem;">
+                    Only Admin / Power Users can register thread stock.
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Shade</label>
+                            {{ form.shade }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tkt</label>
+                            {{ form.tkt }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Bin No</label>
+                            {{ form.bin_no }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Column Name</label>
+                            {{ form.column_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Brand</label>
+                            {{ form.brand }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Available Quantity</label>
+                            {{ form.available_quantity }}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            Save Thread
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
