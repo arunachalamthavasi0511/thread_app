@@ -4,6 +4,11 @@ from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth.models import User
 
+from io import BytesIO
+import qrcode
+from django.http import HttpResponse
+
+
 from .models import Thread, Issuance, Profile
 from .forms import ThreadForm, IssuanceForm, UserCreateForm
 from .utils import is_admin, is_power, is_user
@@ -396,3 +401,27 @@ def column_detail(request, column_name):
         "threads": threads,
         "total_qty": total_qty,
     })
+
+@login_required
+def column_qr(request, column_name):
+    # Build the full URL for this column's detail page
+    url = request.build_absolute_uri(
+        reverse("column_detail", args=[column_name])
+    )
+
+    # Generate QR code image in memory
+    qr = qrcode.QRCode(
+        version=1,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    image_bytes = buffer.getvalue()
+
+    return HttpResponse(image_bytes, content_type="image/png")

@@ -26,7 +26,7 @@
                     </p>
                     <!-- QR via Google Chart API -->
                     <img
-                        src="https://chart.googleapis.com/chart?chs=160x160&cht=qr&chl={{ col.url|urlencode }}"
+                        src="{% url 'column_qr' col.name %}"
                         alt="QR for {{ col.name }}"
                         class="img-fluid mb-2"
                     >

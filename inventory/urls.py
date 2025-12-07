@@ -15,10 +15,12 @@ urlpatterns = [
 
     path("columns/", views.column_list, name="column_list"),
     path("columns/<str:column_name>/", views.column_detail, name="column_detail"),
+     path("columns/<str:column_name>/qr/", views.column_qr, name="column_qr"),
 
     path("logs/", views.logs, name="logs"),
     path("users/", views.user_management, name="user_management"),
     path("approvals/", views.pending_issuances, name="pending_issuances"),
     path("viewer-login/", views.viewer_login, name="viewer_login"),
+   
 
 ]
