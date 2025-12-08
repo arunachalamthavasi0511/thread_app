@@ -66,3 +66,36 @@ class Issuance(models.Model):
 
     def __str__(self):
         return f"Issuance {self.id}"
+
+class RegistrationLog(models.Model):
+    ACTION_CHOICES = [
+        ("CREATE", "Created new stock"),
+        ("UPDATE", "Updated existing stock"),
+        ("REVERT", "Reverted registration"),
+    ]
+
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="registration_logs")
+
+    shade = models.CharField(max_length=100)
+    tkt = models.CharField(max_length=100)
+    bin_no = models.CharField(max_length=100)
+    column_name = models.CharField(max_length=100)
+    category = models.CharField(max_length=10, choices=Thread.CATEGORY_CHOICES)
+    brand = models.CharField(max_length=100)
+
+    # +ve when stock added, -ve when reverted
+    qty_change = models.IntegerField()
+    old_quantity = models.IntegerField()
+    new_quantity = models.IntegerField()
+
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    is_reverted = models.BooleanField(default=False)
+    reverted_from = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.action} ({self.qty_change}) on {self.thread} at {self.created_at}"

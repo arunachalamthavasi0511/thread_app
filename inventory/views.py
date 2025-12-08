@@ -9,7 +9,7 @@ import qrcode
 from django.http import HttpResponse
 
 
-from .models import Thread, Issuance, Profile
+from .models import Thread, Issuance, Profile, RegistrationLog
 from .forms import ThreadForm, IssuanceForm, UserCreateForm
 from .utils import is_admin, is_power, is_user
 from django.contrib.auth import login
@@ -41,6 +41,8 @@ def dashboard(request):
         "pending_count": pending_count,
     })
 
+
+
 @login_required
 def register_thread(request):
     # Only Admin or Power user
@@ -59,7 +61,6 @@ def register_thread(request):
             category = form.cleaned_data["category"]
             brand = form.cleaned_data["brand"]
 
-            # Try to find existing stock with same key fields
             existing = Thread.objects.filter(
                 shade=shade,
                 tkt=tkt,
@@ -68,18 +69,37 @@ def register_thread(request):
             ).first()
 
             if existing:
+                # UPDATE existing stock
                 old_qty = existing.available_quantity
-                existing.available_quantity = old_qty + qty_to_add
+                new_qty = old_qty + qty_to_add
+
+                existing.available_quantity = new_qty
                 existing.category = category
                 existing.brand = brand
                 existing.save()
 
+                RegistrationLog.objects.create(
+                    thread=existing,
+                    shade=shade,
+                    tkt=tkt,
+                    bin_no=bin_no,
+                    column_name=column_name,
+                    category=category,
+                    brand=brand,
+                    qty_change=qty_to_add,      # 👈 positive
+                    old_quantity=old_qty,
+                    new_quantity=new_qty,
+                    action="UPDATE",
+                    created_by=request.user,
+                )
+
                 messages.success(
                     request,
-                    f"Existing stock updated. Quantity changed from {old_qty} to {existing.available_quantity}."
+                    f"Existing stock updated. Quantity changed from {old_qty} to {new_qty}."
                 )
             else:
-                thread = Thread(
+                # CREATE new stock
+                thread = Thread.objects.create(
                     shade=shade,
                     tkt=tkt,
                     bin_no=bin_no,
@@ -89,14 +109,30 @@ def register_thread(request):
                     brand=brand,
                     created_by=request.user,
                 )
-                thread.save()
+
+                RegistrationLog.objects.create(
+                    thread=thread,
+                    shade=shade,
+                    tkt=tkt,
+                    bin_no=bin_no,
+                    column_name=column_name,
+                    category=category,
+                    brand=brand,
+                    qty_change=qty_to_add,      # 👈 positive
+                    old_quantity=0,
+                    new_quantity=qty_to_add,
+                    action="CREATE",
+                    created_by=request.user,
+                )
+
                 messages.success(request, "New thread registered successfully.")
 
-            return redirect("dashboard")
+            # stay on registration page
+            return redirect("register_thread")
     else:
         form = ThreadForm()
 
-    # Suggestions based on existing data (used both GET and POST render)
+    # Suggestions based on existing data
     shades = Thread.objects.values_list("shade", flat=True).distinct()
     tkts = Thread.objects.values_list("tkt", flat=True).distinct()
     bins = Thread.objects.values_list("bin_no", flat=True).distinct()
@@ -111,6 +147,7 @@ def register_thread(request):
         "columns": columns,
         "brands": brands,
     })
+
 
 
 
@@ -149,7 +186,7 @@ def issuance(request):
                 issuance.status = "PENDING"
                 issuance.save()
                 messages.info(request, "Issuance request created and waiting for approval.")
-                return redirect("dashboard")
+                return redirect("register_thread")
     else:
         form = IssuanceForm(column=column)
 
@@ -236,6 +273,7 @@ def receipt(request, id):
 def registration_logs(request):
     q = request.GET.get("q", "").strip()
 
+    # Current stock summary
     threads = Thread.objects.all()
     if q:
         threads = threads.filter(
@@ -245,13 +283,88 @@ def registration_logs(request):
             | Q(column_name__icontains=q)
             | Q(brand__icontains=q)
         )
-
     threads = threads.order_by("-registration_date")
+
+    # Registration history (for undo)
+    reg_logs = RegistrationLog.objects.select_related("thread", "created_by")
+    if q:
+        reg_logs = reg_logs.filter(
+            Q(shade__icontains=q)
+            | Q(tkt__icontains=q)
+            | Q(bin_no__icontains=q)
+            | Q(column_name__icontains=q)
+            | Q(brand__icontains=q)
+        )
+    reg_logs = reg_logs.order_by("-created_at")
+
+    # 👇 This flag controls visibility of the Revert button
+    can_revert = is_admin(request.user) or is_power(request.user)
 
     return render(request, "inventory/registration_logs.html", {
         "threads": threads,
+        "reg_logs": reg_logs,
         "q": q,
+        "can_revert": can_revert,
     })
+
+@login_required
+def revert_registration(request, log_id):
+    # Only Admin or Power user can revert
+    if not (is_admin(request.user) or is_power(request.user)):
+        messages.error(request, "You do not have permission to revert registrations.")
+        return redirect("registration_logs")
+
+    log = get_object_or_404(RegistrationLog, id=log_id)
+
+    if log.is_reverted:
+        messages.warning(request, "This registration has already been reverted.")
+        return redirect("registration_logs")
+
+    thread = log.thread
+
+    # Safety: do not allow revert if not enough current stock
+    if thread.available_quantity < log.qty_change:
+        messages.error(
+            request,
+            "Cannot revert this registration because current stock is less than the quantity that was added."
+        )
+        return redirect("registration_logs")
+
+    old_qty = thread.available_quantity
+    new_qty = old_qty - log.qty_change
+
+    thread.available_quantity = new_qty
+    thread.save()
+
+    # Mark original registration log as reverted
+    log.is_reverted = True
+    log.save()
+
+    # Create a REVERT log entry
+    RegistrationLog.objects.create(
+        thread=thread,
+        shade=log.shade,
+        tkt=log.tkt,
+        bin_no=log.bin_no,
+        column_name=log.column_name,
+        category=log.category,
+        brand=log.brand,
+        qty_change=-log.qty_change,
+        old_quantity=old_qty,
+        new_quantity=new_qty,
+        action="REVERT",
+        is_reverted=False,
+        reverted_from=log,
+        created_by=request.user,
+    )
+
+    messages.success(
+        request,
+        f"Registration from {log.created_at.strftime('%Y-%m-%d %H:%M:%S')} has been reverted."
+    )
+
+    return redirect("registration_logs")
+
 
 
 @login_required

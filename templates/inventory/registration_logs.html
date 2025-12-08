@@ -5,6 +5,7 @@
 {% block content %}
 <h3 class="mb-3">Thread Registration Logs</h3>
 
+<!-- Filter + Export -->
 <form method="get" class="row g-2 mb-3">
     <div class="col-sm-6 col-md-4">
         <input type="text" name="q" value="{{ q }}" class="form-control"
@@ -18,13 +19,15 @@
     </div>
     <div class="col-auto">
         <a href="{% url 'registration_logs_export' %}?q={{ q }}" class="btn btn-success btn-sm">
-            Export CSV
+            Export CSV (Current Stock)
         </a>
     </div>
 </form>
 
+<!-- 1. Current Stock Table -->
 <div class="card card-soft">
     <div class="card-body">
+        <h5 class="mb-3">Current Thread Stock</h5>
         <div class="table-responsive">
             <table class="table table-sm align-middle resizable-table">
                 <thead>
@@ -56,7 +59,84 @@
                     {% empty %}
                         <tr>
                             <td colspan="9" class="text-center text-muted">
-                                No registration logs found.
+                                No registration logs found for current stock.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<br>
+
+<!-- 2. Registration History (for undo) -->
+<h4 class="mb-2">Registration History (for Undo)</h4>
+<p class="text-muted" style="font-size:0.85rem;">
+    Every time stock is registered or updated, an entry appears here.
+    Admin / Power Users can revert an individual registration if there is enough stock available.
+</p>
+
+<div class="card card-soft">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm align-middle resizable-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Shade</th>
+                        <th>Tkt</th>
+                        <th>Bin</th>
+                        <th>Column</th>
+                        <th>Category</th>
+                        <th>Brand</th>
+                        <th>Qty Change</th>
+                        <th>Old Qty</th>
+                        <th>New Qty</th>
+                        <th>Action</th>
+                        <th>By</th>
+                        <th>Reverted?</th>
+                        <th>Undo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reg_logs %}
+                        <tr>
+                            <td>{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ r.shade }}</td>
+                            <td>{{ r.tkt }}</td>
+                            <td>{{ r.bin_no }}</td>
+                            <td>{{ r.column_name }}</td>
+                            <td>{{ r.get_category_display }}</td>
+                            <td>{{ r.brand }}</td>
+                            <td>{{ r.qty_change }}</td>
+                            <td>{{ r.old_quantity }}</td>
+                            <td>{{ r.new_quantity }}</td>
+                            <td>{{ r.action }}</td>
+                            <td>{{ r.created_by.username|default:"-" }}</td>
+                            <td>
+                                {% if r.is_reverted %}
+                                    ✅
+                                {% elif r.action == "REVERT" %}
+                                    (revert)
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if can_revert and not r.is_reverted and r.qty_change > 0 %}
+                                    <a href="{% url 'revert_registration' r.id %}"
+                                       class="btn btn-sm btn-outline-danger">
+                                        Revert
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="14" class="text-center text-muted">
+                                No registration history yet.
                             </td>
                         </tr>
                     {% endfor %}
