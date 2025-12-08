@@ -3,20 +3,20 @@ from django.contrib.auth.models import User
 
 from .models import Thread, Issuance, Profile
 
-
 class ThreadForm(forms.ModelForm):
     class Meta:
         model = Thread
         fields = ["shade", "tkt", "bin_no", "available_quantity", "category", "brand", "column_name"]
         widgets = {
-            "shade": forms.TextInput(attrs={"class": "form-control"}),
-            "tkt": forms.TextInput(attrs={"class": "form-control"}),
-            "bin_no": forms.TextInput(attrs={"class": "form-control"}),
+            "shade": forms.TextInput(attrs={"class": "form-control", "list": "shade-list"}),
+            "tkt": forms.TextInput(attrs={"class": "form-control", "list": "tkt-list"}),
+            "bin_no": forms.TextInput(attrs={"class": "form-control", "list": "bin-list"}),
             "available_quantity": forms.NumberInput(attrs={"class": "form-control"}),
             "category": forms.Select(attrs={"class": "form-select"}),
-            "brand": forms.TextInput(attrs={"class": "form-control"}),
-            "column_name": forms.TextInput(attrs={"class": "form-control"}),
+            "brand": forms.TextInput(attrs={"class": "form-control", "list": "brand-list"}),
+            "column_name": forms.TextInput(attrs={"class": "form-control", "list": "column-list"}),
         }
+
 
 class IssuanceForm(forms.ModelForm):
     class Meta:
@@ -52,3 +52,20 @@ class UserCreateForm(forms.ModelForm):
         widgets = {
             "username": forms.TextInput(attrs={"class": "form-control"}),
         }
+
+
+class RejectIssuanceForm(forms.Form):
+    REASON_CHOICES = [
+        ("FALSE_REQUEST", "Request raised incorrectly"),
+        ("NOT_ENOUGH_STOCK", "Stock is not sufficient"),
+        ("OTHER", "Other (enter comment)"),
+    ]
+    reason = forms.ChoiceField(
+        choices=REASON_CHOICES,
+        widget=forms.RadioSelect
+    )
+    comment = forms.CharField(
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        required=False,
+    )
+

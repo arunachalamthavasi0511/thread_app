@@ -39,6 +39,8 @@
                         <th>Requested At</th>
                         <th>Approved By</th>
                         <th>Approved At</th>
+                        <th>Reject Reason</th>
+                        <th>Reject Comment</th>
                         <th>Bin</th>
                         <th>Column</th>
                         <th>Receipt No</th>
@@ -61,6 +63,16 @@
                                     {{ i.approved_at|date:"Y-m-d H:i" }}
                                 {% else %}
                                     -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if i.status == "REJECTED" %}
+                                    {{ i.rejection_reason }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if i.status == "REJECTED" %}
+                                    {{ i.rejection_comment }}
                                 {% endif %}
                             </td>
                             <td>{{ i.bin_snapshot }}</td>

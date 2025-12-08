@@ -7,10 +7,12 @@
     <div class="col-lg-7 col-md-9">
         <div class="card card-soft">
             <div class="card-body">
-                <h4 class="mb-3">Register New Thread</h4>
+                <h4 class="mb-3">Register / Update Thread Stock</h4>
                 <p class="text-muted" style="font-size:0.9rem;">
-                    Only Admin / Power Users can register thread stock.
+                    If Shade + Tkt + Bin + Column already exist, quantity will be <strong>added</strong> to existing stock.
+                    Otherwise, a <strong>new stock row</strong> will be created.
                 </p>
+
                 <form method="post">
                     {% csrf_token %}
                     <div class="row g-3">
@@ -39,17 +41,53 @@
                             {{ form.brand }}
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Available Quantity</label>
+                            <label class="form-label">Quantity to Add</label>
                             {{ form.available_quantity }}
                         </div>
                     </div>
 
+                    <!-- Suggestions (datalists) -->
+                    <datalist id="shade-list">
+                        {% for s in shades %}
+                            <option value="{{ s }}"></option>
+                        {% endfor %}
+                    </datalist>
+
+                    <datalist id="tkt-list">
+                        {% for t in tkts %}
+                            <option value="{{ t }}"></option>
+                        {% endfor %}
+                    </datalist>
+
+                    <datalist id="bin-list">
+                        {% for b in bins %}
+                            <option value="{{ b }}"></option>
+                        {% endfor %}
+                    </datalist>
+
+                    <datalist id="column-list">
+                        {% for c in columns %}
+                            <option value="{{ c }}"></option>
+                        {% endfor %}
+                    </datalist>
+
+                    <datalist id="brand-list">
+                        {% for b in brands %}
+                            <option value="{{ b }}"></option>
+                        {% endfor %}
+                    </datalist>
+
                     <div class="mt-4 d-flex justify-content-end">
                         <button type="submit" class="btn btn-primary">
-                            Save Thread
+                            Save / Update Stock
                         </button>
                     </div>
                 </form>
+
+                <p class="mt-3 text-muted" style="font-size:0.85rem;">
+                    Tip: When you start typing in Shade, Tkt, Bin, Column or Brand, browser will suggest existing values
+                    based on previously registered stock.
+                </p>
             </div>
         </div>
     </div>

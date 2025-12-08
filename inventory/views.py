@@ -22,7 +22,7 @@ import csv
 from django.urls import reverse
 from django.db.models import Sum
 
-
+from .forms import ThreadForm, IssuanceForm, UserCreateForm, RejectIssuanceForm
 
 @login_required
 def dashboard(request):
@@ -41,8 +41,6 @@ def dashboard(request):
         "pending_count": pending_count,
     })
 
-
-
 @login_required
 def register_thread(request):
     # Only Admin or Power user
@@ -53,15 +51,67 @@ def register_thread(request):
     if request.method == "POST":
         form = ThreadForm(request.POST)
         if form.is_valid():
-            thread = form.save(commit=False)
-            thread.created_by = request.user
-            thread.save()
-            messages.success(request, "Thread registered successfully!")
+            shade = form.cleaned_data["shade"]
+            tkt = form.cleaned_data["tkt"]
+            bin_no = form.cleaned_data["bin_no"]
+            column_name = form.cleaned_data["column_name"]
+            qty_to_add = form.cleaned_data["available_quantity"]
+            category = form.cleaned_data["category"]
+            brand = form.cleaned_data["brand"]
+
+            # Try to find existing stock with same key fields
+            existing = Thread.objects.filter(
+                shade=shade,
+                tkt=tkt,
+                bin_no=bin_no,
+                column_name=column_name,
+            ).first()
+
+            if existing:
+                old_qty = existing.available_quantity
+                existing.available_quantity = old_qty + qty_to_add
+                existing.category = category
+                existing.brand = brand
+                existing.save()
+
+                messages.success(
+                    request,
+                    f"Existing stock updated. Quantity changed from {old_qty} to {existing.available_quantity}."
+                )
+            else:
+                thread = Thread(
+                    shade=shade,
+                    tkt=tkt,
+                    bin_no=bin_no,
+                    column_name=column_name,
+                    available_quantity=qty_to_add,
+                    category=category,
+                    brand=brand,
+                    created_by=request.user,
+                )
+                thread.save()
+                messages.success(request, "New thread registered successfully.")
+
             return redirect("dashboard")
     else:
         form = ThreadForm()
 
-    return render(request, "inventory/register_thread.html", {"form": form})
+    # Suggestions based on existing data (used both GET and POST render)
+    shades = Thread.objects.values_list("shade", flat=True).distinct()
+    tkts = Thread.objects.values_list("tkt", flat=True).distinct()
+    bins = Thread.objects.values_list("bin_no", flat=True).distinct()
+    columns = Thread.objects.values_list("column_name", flat=True).distinct()
+    brands = Thread.objects.values_list("brand", flat=True).distinct()
+
+    return render(request, "inventory/register_thread.html", {
+        "form": form,
+        "shades": shades,
+        "tkts": tkts,
+        "bins": bins,
+        "columns": columns,
+        "brands": brands,
+    })
+
 
 
 @login_required
@@ -134,6 +184,48 @@ def approve_issuance(request, id):
     messages.success(request, "Issuance approved.")
     return redirect("receipt", issuance.id)
 
+@login_required
+def reject_issuance(request, id):
+    if not (is_admin(request.user) or is_power(request.user)):
+        messages.error(request, "You do not have permission to reject issuances.")
+        return redirect("dashboard")
+
+    issuance = get_object_or_404(Issuance, id=id)
+
+    if issuance.status != "PENDING":
+        messages.warning(request, "Only pending requests can be rejected.")
+        return redirect("pending_issuances")
+
+    if request.method == "POST":
+        form = RejectIssuanceForm(request.POST)
+        if form.is_valid():
+            reason = form.cleaned_data["reason"]
+            comment = form.cleaned_data["comment"] or ""
+
+            # If they choose OTHER, comment should not be empty
+            if reason == "OTHER" and not comment.strip():
+                messages.error(request, "Please provide a comment for 'Other' reason.")
+                return render(request, "inventory/reject_issuance.html", {
+                    "form": form,
+                    "issuance": issuance,
+                })
+
+            issuance.status = "REJECTED"
+            issuance.approved_by = request.user   # the person who acted
+            issuance.approved_at = timezone.now() # time of action
+            issuance.rejection_reason = reason
+            issuance.rejection_comment = comment
+            issuance.save()
+
+            messages.success(request, f"Issuance #{issuance.id} rejected.")
+            return redirect("pending_issuances")
+    else:
+        form = RejectIssuanceForm()
+
+    return render(request, "inventory/reject_issuance.html", {
+        "form": form,
+        "issuance": issuance,
+    })
 
 @login_required
 def receipt(request, id):
@@ -242,9 +334,10 @@ def issuance_logs_export(request):
     writer = csv.writer(response)
 
     writer.writerow([
-        "Thread", "Shade", "Tkt", "Qty", "Status",
-        "Requested By", "Requested At", "Approved By", "Approved At",
-        "Bin", "Column", "Receipt No",
+    "Thread", "Shade", "Tkt", "Qty", "Status",
+    "Requested By", "Requested At", "Approved By", "Approved At",
+    "Bin", "Column", "Receipt No",
+    "Rejection Reason", "Rejection Comment",
     ])
 
     for i in issuances:
@@ -259,9 +352,12 @@ def issuance_logs_export(request):
             i.approved_by.username if i.approved_by else "",
             i.approved_at.strftime("%Y-%m-%d %H:%M:%S") if i.approved_at else "",
             i.bin_snapshot,
+            i.rejection_reason or "",
+            (i.rejection_comment or "").replace("\n", " "),
             i.column_snapshot,
             i.receipt_number,
-        ])
+            
+    ])
 
     return response
 

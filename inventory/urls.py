@@ -6,6 +6,7 @@ urlpatterns = [
     path("register/", views.register_thread, name="register_thread"),
     path("issuance/", views.issuance, name="issuance"),
     path("approve/<int:id>/", views.approve_issuance, name="approve"),
+    path("reject/<int:id>/", views.reject_issuance, name="reject_issuance"),
     path("receipt/<int:id>/", views.receipt, name="receipt"),
 
     path("logs/registration/", views.registration_logs, name="registration_logs"),
@@ -21,6 +22,6 @@ urlpatterns = [
     path("users/", views.user_management, name="user_management"),
     path("approvals/", views.pending_issuances, name="pending_issuances"),
     path("viewer-login/", views.viewer_login, name="viewer_login"),
-   
+
 
 ]

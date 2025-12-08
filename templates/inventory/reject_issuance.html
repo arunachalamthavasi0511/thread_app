@@ -1,0 +1,43 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}Reject Issuance #{{ issuance.id }} - Thread Inventory{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card card-soft">
+            <div class="card-body">
+                <h4 class="mb-3">Reject Issuance #{{ issuance.id }}</h4>
+                <p class="text-muted" style="font-size:0.9rem;">
+                    Thread: <strong>{{ issuance.thread.shade }} / {{ issuance.thread.tkt }}</strong><br>
+                    Requested Qty: <strong>{{ issuance.requested_quantity }}</strong><br>
+                    Requested By: <strong>{{ issuance.requested_by.username|default:"-" }}</strong>
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label><br>
+                        {{ form.reason }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Comment</label>
+                        {{ form.comment }}
+                        <div class="form-text">
+                            For "Other", please describe the reason clearly.
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'pending_issuances' %}" class="btn btn-secondary">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            Confirm Reject
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
