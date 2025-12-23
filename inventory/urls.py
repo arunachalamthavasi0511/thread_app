@@ -30,4 +30,10 @@ urlpatterns = [
     path("users/", views.user_management, name="user_management"),
     path("approvals/", views.pending_issuances, name="pending_issuances"),
     path("viewer-login/", views.viewer_login, name="viewer_login"),
+
+    path("qr/", views.qr_explorer, name="qr_explorer"),
+    path("qr/view/", views.qr_filtered_view, name="qr_filtered_view"),
+    path("qr/image/", views.qr_image, name="qr_image"),
+
+
 ]

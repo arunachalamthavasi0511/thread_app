@@ -1,0 +1,52 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}QR Explorer{% endblock %}
+
+{% block content %}
+
+<h3 class="mb-2">QR Explorer</h3>
+<p class="text-muted">Select a filter type to generate QR codes</p>
+
+<!-- FILTER DROPDOWN -->
+<form method="get" class="mb-4" style="max-width:300px;">
+    <label class="form-label">Select QR Type</label>
+    <select name="type" class="form-select" onchange="this.form.submit()">
+        <option value="column" {% if qr_type == "column" %}selected{% endif %}>Column</option>
+        <option value="shade" {% if qr_type == "shade" %}selected{% endif %}>Shade</option>
+        <option value="bin" {% if qr_type == "bin" %}selected{% endif %}>Bin</option>
+        <option value="tkt" {% if qr_type == "tkt" %}selected{% endif %}>Tkt</option>
+    </select>
+</form>
+
+<h5 class="mb-3">{{ label }} wise QR Codes</h5>
+
+<div class="row">
+    {% for i in items %}
+        <div class="col-md-3 mb-4">
+            <div class="card text-center p-2 h-100">
+                <div class="card-body">
+                    <strong>{{ label }}: {{ i.value }}</strong>
+                    <p class="text-muted mb-1">Qty: {{ i.total }}</p>
+
+                    <img
+                        src="{% url 'qr_image' %}?type={{ qr_type }}&value={{ i.value }}"
+                        class="img-fluid mb-2"
+                        alt="QR {{ i.value }}"
+                    >
+
+                    <div>
+                        <a href="{% url 'qr_filtered_view' %}?type={{ qr_type }}&value={{ i.value }}"
+                           class="btn btn-sm btn-outline-primary"
+                           target="_blank">
+                            Open {{ label }} Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <p class="text-muted">No {{ label|lower }}s found.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}

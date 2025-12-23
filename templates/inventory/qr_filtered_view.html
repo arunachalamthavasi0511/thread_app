@@ -1,0 +1,33 @@
+{% extends "inventory/base.html" %}
+{% block content %}
+
+<h3>
+    {{ filter_type|title }}: {{ filter_value }}
+</h3>
+<p>Total Quantity: <strong>{{ total_qty }}</strong></p>
+
+<a href="{% url 'issuance' %}?{{ filter_type }}={{ filter_value }}"
+   class="btn btn-primary mb-3">
+   Go to Issuance
+</a>
+
+<table class="table table-sm">
+<thead>
+<tr>
+    <th>Shade</th><th>Tkt</th><th>Bin</th><th>Column</th><th>Qty</th>
+</tr>
+</thead>
+<tbody>
+{% for t in threads %}
+<tr>
+    <td>{{ t.shade }}</td>
+    <td>{{ t.tkt }}</td>
+    <td>{{ t.bin_no }}</td>
+    <td>{{ t.column_name }}</td>
+    <td>{{ t.available_quantity }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% endblock %}

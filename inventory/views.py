@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 
 from io import BytesIO
 import qrcode
-from django.http import HttpResponse
+from urllib.parse import urlencode
+
 
 
 from .models import Thread, Issuance, Profile, RegistrationLog
@@ -634,3 +635,132 @@ def column_qr(request, column_name):
     image_bytes = buffer.getvalue()
 
     return HttpResponse(image_bytes, content_type="image/png")
+
+
+
+@login_required
+def qr_explorer(request):
+    qr_type = request.GET.get("type", "column")
+
+    data_map = {
+        "column": {
+            "label": "Column",
+            "field": "column_name",
+            "qs": (
+                Thread.objects
+                .exclude(column_name__isnull=True)
+                .exclude(column_name__exact="")
+                .values("column_name")
+                .annotate(total=Sum("available_quantity"))
+                .order_by("column_name")
+            ),
+        },
+        "shade": {
+            "label": "Shade",
+            "field": "shade",
+            "qs": (
+                Thread.objects
+                .exclude(shade__isnull=True)
+                .exclude(shade__exact="")
+                .values("shade")
+                .annotate(total=Sum("available_quantity"))
+                .order_by("shade")
+            ),
+        },
+        "bin": {
+            "label": "Bin",
+            "field": "bin_no",
+            "qs": (
+                Thread.objects
+                .exclude(bin_no__isnull=True)
+                .exclude(bin_no__exact="")
+                .values("bin_no")
+                .annotate(total=Sum("available_quantity"))
+                .order_by("bin_no")
+            ),
+        },
+        "tkt": {
+            "label": "Tkt",
+            "field": "tkt",
+            "qs": (
+                Thread.objects
+                .exclude(tkt__isnull=True)
+                .exclude(tkt__exact="")
+                .values("tkt")
+                .annotate(total=Sum("available_quantity"))
+                .order_by("tkt")
+            ),
+        },
+    }
+
+    if qr_type not in data_map:
+        qr_type = "column"
+
+    config = data_map[qr_type]
+
+    # 🔑 Build template-friendly structure
+    items = []
+    for row in config["qs"]:
+        value = row[config["field"]]
+        items.append({
+            "value": value,
+            "total": row["total"],
+        })
+
+    return render(request, "inventory/qr_explorer.html", {
+        "qr_type": qr_type,
+        "label": config["label"],
+        "items": items,
+    })
+
+
+
+@login_required
+def qr_image(request):
+    qr_type = request.GET.get("type")
+    value = request.GET.get("value")
+
+    url = request.build_absolute_uri(
+        reverse("qr_filtered_view") + "?" + urlencode({
+            "type": qr_type,
+            "value": value
+        })
+    )
+
+    qr = qrcode.QRCode(box_size=8, border=2)
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    return HttpResponse(buffer.getvalue(), content_type="image/png")
+
+@login_required
+def qr_filtered_view(request):
+    qr_type = request.GET.get("type")
+    value = request.GET.get("value")
+
+    filters = {
+        "column": {"column_name": value},
+        "shade": {"shade": value},
+        "bin": {"bin_no": value},
+        "tkt": {"tkt": value},
+    }
+
+    if qr_type not in filters:
+        messages.error(request, "Invalid QR filter")
+        return redirect("dashboard")
+
+    threads = Thread.objects.filter(**filters[qr_type])
+    total_qty = threads.aggregate(total=Sum("available_quantity"))["total"] or 0
+
+    return render(request, "inventory/qr_filtered_view.html", {
+        "threads": threads,
+        "filter_type": qr_type,
+        "filter_value": value,
+        "total_qty": total_qty,
+    })
+
+
+
